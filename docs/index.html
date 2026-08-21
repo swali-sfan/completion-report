@@ -631,11 +631,12 @@
       if (y + neededH > pageH - margin){ doc.addPage(); y = margin; doc.addImage(watermark , "PNG" , pageW/2 , pageH - 48 , 80 , 50); }
     }
     function sectionHeader(title){
+      y += 16; // vertical gap from whatever content came before this section
       pageBreakCheck(28);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(13);
       doc.setTextColor(20,20,20);
-      doc.text(title, margin, y);
+      doc.text(title, pageW / 2, y + 5, { align: 'center' });
       doc.setDrawColor(255,106,31);
       y += 20;
     }
