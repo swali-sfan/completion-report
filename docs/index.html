@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Completion Report</title>
+
+<!-- PWA: installability -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#12171A">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Completion Report">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="vendor/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#12171A;
+    --surface:#fcfcfc;
+    --surface-raised:#c4cacc;
+    --line:#2B353B;
+    --text:#000000;
+    --text-muted:#8C9AA1;
+    --accent:#FF6A1F;
+    --accent-dim:#7A3A17;
+    --ok:#7FB069;
+    --danger:#E15252;
+    --radius:2px;
+    --mono: 'IBM Plex Mono', monospace;
+    --display: 'Oswald', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--body);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:64px;
+  }
+  .app{
+    max-width:520px;
+    margin:0 auto;
+    min-height:100vh;
+    background:var(--bg);
+    position:relative;
+  }
+
+  header.topbar{
+    padding:22px 20px 18px;
+    border-bottom:1px solid var(--line);
+    background:
+      repeating-linear-gradient(135deg, rgba(255,106,31,0.05) 0 2px, transparent 2px 14px),
+      var(--surface);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;  
+  }
+  .topbar img {
+  display: block;
+  margin: 0 auto;
+  }
+
+  .topbar .eyebrow,
+  .topbar .title {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:0.14em;
+    color:var(--accent);
+    text-transform:uppercase;
+  }
+  h1.title{
+    font-family:var(--display);
+    font-weight:700;
+    font-size:26px;
+    letter-spacing:0.01em;
+    text-transform:uppercase;
+    margin:6px 0 0;
+  }
+
+  main{padding:20px;}
+
+  /* ---------- Photo section blocks ---------- */
+  .photo-section{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    margin-bottom:16px;
+    overflow:hidden;
+  }
+  .section-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px 14px;
+    border-bottom:1px solid var(--line);
+    background:var(--surface-raised);
+  }
+  .section-title-input{
+    flex:1;
+    background:transparent;
+    border:none;
+    border-bottom:1px dashed var(--line);
+    color:var(--text);
+    font-family:var(--display);
+    font-size:15px;
+    letter-spacing:0.02em;
+    text-transform:uppercase;
+    padding:6px 2px;
+  }
+  .section-title-input::placeholder{color:var(--text-muted); text-transform:none; font-family:var(--body); letter-spacing:0;}
+  .section-title-input:focus{outline:none; border-bottom-color:var(--accent);}
+  .remove-section-btn{
+    flex-shrink:0;
+    width:28px; height:28px;
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text-muted);
+    border-radius:50%;
+    cursor:pointer;
+    font-size:14px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .remove-section-btn:active{border-color:var(--danger); color:var(--danger);}
+  .section-body{padding:14px;}
+
+  /* ---------- Photo grid ---------- */
+  .photo-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:10px;
+  }
+  .photo-tile{
+    position:relative;
+    border-radius:var(--radius);
+    background:var(--surface-raised);
+    border:1px solid var(--line);
+    padding:6px;
+  }
+  .photo-img-wrap{
+    position:relative;
+    aspect-ratio:1;
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .photo-img-wrap img{width:100%; height:100%; object-fit:cover; display:block;}
+  .photo-tile .rm{
+    position:absolute; top:10px; right:10px;
+    width:22px; height:22px;
+    background:rgba(18,23,26,0.85);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px;
+    cursor:pointer;
+    line-height:1;
+  }
+  .photo-caption{
+    width:100%;
+    margin-top:6px;
+    padding:8px 10px;
+    font-size:12px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:var(--radius);
+    box-sizing:border-box;
+  }
+  .photo-caption:focus{
+    outline:2px solid var(--accent);
+    outline-offset:1px;
+    border-color:var(--accent);
+  }
+  .add-photo-btn{
+    aspect-ratio:1;
+    border:1px dashed var(--line);
+    background:transparent;
+    color:var(--text-muted);
+    border-radius:var(--radius);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:6px;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    cursor:pointer;
+  }
+  .add-photo-btn:active{border-color:var(--accent); color:var(--accent);}
+  .add-photo-btn .plus{font-size:22px; line-height:1; font-family:var(--body); font-weight:300;}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    width:100%;
+    padding:15px 18px;
+    border-radius:var(--radius);
+    border:1px solid transparent;
+    font-family:var(--display);
+    font-size:15px;
+    font-weight:600;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn-primary{background:var(--accent); color:#1A1006;}
+  .btn-primary:active{background:#E65E17;}
+  .btn-primary:disabled{background:var(--accent-dim); color:#6b5240; cursor:not-allowed;}
+  .btn-secondary{background:transparent; border:1px solid var(--line); color:var(--text);}
+  .btn-secondary:active{border-color:var(--accent); color:var(--accent);}
+  .btn-row{display:flex; gap:10px;}
+  .btn-row .btn{width:auto; flex:1;}
+
+  #addSectionBtn{
+    margin-bottom:20px;
+    background:var(--surface);
+    color:var(--text);
+    border-color:var(--line);
+  }
+  #addSectionBtn:active{
+    background:var(--surface-raised);
+    border-color:var(--accent);
+  }
+
+  .error-banner{
+    background:rgba(225,82,82,0.1);
+    border:1px solid var(--danger);
+    color:#ffb4b4;
+    padding:10px 14px;
+    border-radius:var(--radius);
+    font-size:13px;
+    margin-bottom:16px;
+    font-family:var(--mono);
+  }
+
+  /* ---------- Result screen ---------- */
+  .result{display:none; padding:20px;}
+  .result.show{display:block;}
+  .ticket-preview{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:24px 20px 20px;
+    text-align:center;
+  }
+  .check-mark{
+    width:44px; height:44px;
+    margin:0 auto 14px;
+    border-radius:50%;
+    background:rgba(127,176,105,0.12);
+    border:1px solid var(--ok);
+    color:var(--ok);
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px;
+  }
+  .ticket-preview h3{
+    font-family:var(--display);
+    text-transform:uppercase;
+    font-size:18px;
+    margin:0 0 4px;
+  }
+  .ticket-preview p{color:var(--text-muted); font-size:13px; margin:0 0 20px;}
+
+  footer.note{
+    padding:0 20px 20px;
+    font-family:var(--mono);
+    font-size:10.5px;
+    color:var(--text-muted);
+    line-height:1.6;
+    text-align:center;
+  }
+
+  .sr-only{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  }
+
+  /* ---------- Install banner ---------- */
+  .install-banner{
+    display:none; align-items:center; gap:12px;
+    background:var(--surface-raised);
+    border:1px solid var(--accent-dim);
+    border-radius:var(--radius);
+    padding:12px 14px;
+    margin:16px 20px 0;
+  }
+  .install-banner.show{display:flex;}
+  .install-banner .icon{
+    width:34px; height:34px; flex-shrink:0;
+    border-radius:6px; background:var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; color:var(--accent);
+    border:1px solid var(--line);
+  }
+  .install-banner .copy{flex:1; min-width:0;}
+  .install-banner .copy strong{
+    display:block; font-family:var(--display); font-size:13px;
+    letter-spacing:0.02em; text-transform:uppercase;
+  }
+  .install-banner .copy span{display:block; font-size:12px; color:var(--text-muted); margin-top:2px;}
+  .install-banner button.install-btn{
+    background:var(--accent); color:#1A1006; border:none;
+    font-family:var(--display); font-weight:600; font-size:12px;
+    letter-spacing:0.04em; text-transform:uppercase;
+    padding:9px 14px; border-radius:var(--radius); cursor:pointer; flex-shrink:0;
+  }
+  .install-banner button.dismiss{
+    background:transparent; border:none; color:var(--text-muted);
+    font-size:18px; line-height:1; cursor:pointer; padding:4px; flex-shrink:0;
+  }
+
+  /* ---------- Modals ---------- */
+  .modal-overlay{
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,0.6); z-index:100;
+    align-items:flex-end; justify-content:center;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal-sheet{
+    background:var(--surface); border:1px solid var(--line);
+    border-top-left-radius:12px; border-top-right-radius:12px;
+    width:100%; max-width:520px; padding:22px 20px 28px;
+  }
+  .modal-sheet h3{
+    font-family:var(--display); text-transform:uppercase; font-size:16px; margin:0 0 14px;
+  }
+  .modal-sheet ol{margin:0 0 18px; padding-left:20px; font-size:14px; line-height:1.9; color:var(--text);}
+  .modal-sheet ol b{color:var(--accent);}
+  .modal-sheet .share-glyph{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:20px; height:20px; border:1px solid var(--text-muted); border-radius:4px;
+    font-size:12px; vertical-align:middle; margin:0 2px;
+  }
+  .photo-source-options{display:flex; flex-direction:column; gap:10px; margin-bottom:14px;}
+  .photo-source-btn{justify-content:flex-start; gap:10px; font-size:14px;}
+  .photo-source-btn span{font-size:18px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <img src="icons/du_icon.png" alt="du_img" width="130px" height="130px">
+    <div class="eyebrow">Photo Documentation · Offline PWA</div>
+    <h1 class="title">Completion Report</h1>
+  </header>
+
+  <div class="install-banner" id="installBanner">
+    <div class="icon">⬇</div>
+    <div class="copy">
+      <strong>Install this app</strong>
+      <span>Add Completion Report to your home screen</span>
+    </div>
+    <button class="install-btn" id="installBtn">Install</button>
+    <button class="dismiss" id="dismissInstall" aria-label="Dismiss">✕</button>
+  </div>
+
+  <div class="modal-overlay" id="iosModal">
+    <div class="modal-sheet">
+      <h3>Add to Home Screen</h3>
+      <ol>
+        <li>Tap the <span class="share-glyph">⬆</span> <b>Share</b> icon in Safari's toolbar</li>
+        <li>Scroll down and tap <b>Add to Home Screen</b></li>
+        <li>Tap <b>Add</b> in the top right</li>
+      </ol>
+      <button class="btn btn-secondary" id="closeIosModal">Got it</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="photoSourceModal">
+    <div class="modal-sheet">
+      <h3>Add Photo</h3>
+      <div class="photo-source-options">
+        <button type="button" class="btn btn-secondary photo-source-btn" id="choosePhotoCamera">
+          <span>📷</span> Take Photo
+        </button>
+        <button type="button" class="btn btn-secondary photo-source-btn" id="choosePhotoGallery">
+          <span>🖼️</span> Choose from Gallery
+        </button>
+      </div>
+      <button class="btn btn-secondary" id="closePhotoSourceModal">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Shared hidden file inputs — one pair for the whole app, not per-section -->
+  <input type="file" accept="image/*" capture="environment" id="cameraInput" class="sr-only">
+  <input type="file" accept="image/*" multiple id="galleryInput" class="sr-only">
+
+  <main id="formView">
+    <div id="sectionsContainer"></div>
+
+    <button type="button" class="btn btn-secondary" id="addSectionBtn">+ Add Section</button>
+
+    <div id="errorBanner" class="error-banner" style="display:none;"></div>
+
+    <button class="btn btn-primary" id="generateBtn">Generate PDF report</button>
+  </main>
+
+  <div class="result" id="resultView">
+    <div class="ticket-preview">
+      <div class="check-mark">✓</div>
+      <h3>Report ready</h3>
+      <p>Your PDF has been generated on this device.</p>
+      <div class="meta" id="resultMeta" style="font-family:var(--mono); font-size:11px; color:var(--text-muted); margin-bottom:20px;"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="editBtn">Edit</button>
+        <button class="btn btn-primary" id="shareBtn">Share / Save</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="note">
+    Nothing on this form is saved to a server or database.<br>
+    Data stays on this device until you choose to share the PDF.
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  const ticketId = 'CR-' + new Date().toISOString().slice(2,10).replace(/-/g,'') + '-' + Math.floor(1000+Math.random()*9000);
+
+  // ================= Section + photo state =================
+  // Each section: { id, el (DOM node), photos: [{ dataUrl, caption }] }
+  const sections = [];
+  let sectionCounter = 0;
+  let activeSection = null; // which section's "+" was tapped, used by the shared photo modal
+
+  const sectionsContainer = document.getElementById('sectionsContainer');
+  const addSectionBtn = document.getElementById('addSectionBtn');
+
+  const photoSourceModal = document.getElementById('photoSourceModal');
+  const choosePhotoCamera = document.getElementById('choosePhotoCamera');
+  const choosePhotoGallery = document.getElementById('choosePhotoGallery');
+  const closePhotoSourceModal = document.getElementById('closePhotoSourceModal');
+  const cameraInput = document.getElementById('cameraInput');
+  const galleryInput = document.getElementById('galleryInput');
+
+  function createSection(){
+    sectionCounter++;
+    const section = { id: 'sec-' + sectionCounter, el: null, photos: [] };
+
+    const wrap = document.createElement('div');
+    wrap.className = 'photo-section';
+    wrap.innerHTML = `
+      <div class="section-head">
+        <input type="text" class="section-title-input">
+        <button type="button" class="remove-section-btn" aria-label="Remove section">✕</button>
+      </div>
+      <div class="section-body">
+        <div class="photo-grid">
+          <button type="button" class="add-photo-btn">
+            <span class="plus">+</span>
+            <span>Add photo</span>
+          </button>
+        </div>
+      </div>
+    `;
+    section.el = wrap;
+    sections.push(section);
+    sectionsContainer.appendChild(wrap);
+
+    wrap.querySelector('.remove-section-btn').addEventListener('click', () => {
+      const idx = sections.indexOf(section);
+      if (idx > -1) sections.splice(idx, 1);
+      wrap.remove();
+    });
+
+    wrap.querySelector('.add-photo-btn').addEventListener('click', () => {
+      activeSection = section;
+      photoSourceModal.classList.add('show');
+    });
+
+    renderSectionPhotos(section);
+    return section;
+  }
+
+  addSectionBtn.addEventListener('click', () => createSection());
+
+  // ---------- Shared photo source picker ----------
+  closePhotoSourceModal.addEventListener('click', () => photoSourceModal.classList.remove('show'));
+  photoSourceModal.addEventListener('click', (e) => {
+    if (e.target === photoSourceModal) photoSourceModal.classList.remove('show');
+  });
+  choosePhotoCamera.addEventListener('click', () => {
+    photoSourceModal.classList.remove('show');
+    cameraInput.click();
+  });
+  choosePhotoGallery.addEventListener('click', () => {
+    photoSourceModal.classList.remove('show');
+    galleryInput.click();
+  });
+
+  function handlePhotoFiles(fileList){
+    if (!activeSection) return;
+    const section = activeSection;
+    const files = Array.from(fileList || []);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        section.photos.push({ dataUrl: ev.target.result, caption: '' });
+        renderSectionPhotos(section);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  cameraInput.addEventListener('change', (e) => { handlePhotoFiles(e.target.files); cameraInput.value = ''; });
+  galleryInput.addEventListener('change', (e) => { handlePhotoFiles(e.target.files); galleryInput.value = ''; });
+
+  function renderSectionPhotos(section){
+    const grid = section.el.querySelector('.photo-grid');
+    const addBtn = section.el.querySelector('.add-photo-btn');
+
+    grid.querySelectorAll('.photo-tile').forEach(t => t.remove());
+    section.photos.forEach((p, i) => {
+      const tile = document.createElement('div');
+      tile.className = 'photo-tile';
+      tile.innerHTML = `
+        <div class="photo-img-wrap">
+          <img src="${p.dataUrl}" alt="Photo ${i+1}">
+          <div class="rm" data-i="${i}">✕</div>
+        </div>
+        <input type="text" class="photo-caption" data-i="${i}" placeholder="Describe this photo…" value="${p.caption || ''}">
+      `;
+      grid.insertBefore(tile, addBtn);
+    });
+
+    grid.querySelectorAll('.rm').forEach(btn => {
+      btn.addEventListener('click', () => {
+        section.photos.splice(Number(btn.dataset.i), 1);
+        renderSectionPhotos(section);
+      });
+    });
+    grid.querySelectorAll('.photo-caption').forEach(input => {
+      input.addEventListener('input', () => {
+        section.photos[Number(input.dataset.i)].caption = input.value;
+      });
+    });
+  }
+
+  // Start with one section so the form isn't empty on load.
+  createSection();
+
+  // ================= Validation =================
+  function showError(msg){
+    const el = document.getElementById('errorBanner');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+  function hideError(){
+    document.getElementById('errorBanner').style.display = 'none';
+  }
+
+  function validate(){
+    const withPhotos = sections.filter(s => s.photos.length > 0);
+    if (withPhotos.length === 0) return 'Add at least one photo before generating the report.';
+    const untitled = withPhotos.some(s => !s.el.querySelector('.section-title-input').value.trim());
+    if (untitled) return 'Give every section with photos a title.';
+    return null;
+  }
+
+  // ================= PDF generation =================
+  let lastPdfBlob = null;
+  let lastPdfName = '';
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+
+        img.onload = function () {
+            const canvas = document.createElement('canvas');
+
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+
+            const ctx = canvas.getContext('2d');
+
+            ctx.drawImage(img, 0, 0);
+
+            const dataURL = canvas.toDataURL('image/png');
+
+            resolve(dataURL);
+        };
+
+        img.onerror = function () {
+            reject(new Error('Could not load image: ' + src));
+        };
+
+        img.src = src;
+    });
+  }
+  async function generatePdf(){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const margin = 48;
+    let y = margin;
+    const watermark = await loadImage('watermark.png')
+    // ---------- Header bar ----------
+    doc.setFillColor(18,23,26);
+    doc.rect(0, 0, pageW, 60, 'F');
+    doc.setTextColor(255,106,31);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('COMPLETION REPORT',  pageW / 2, 24, { align: 'center' });
+    doc.setFont('courier', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(140,154,161);
+    doc.text(ticketId + '   ·   Generated ' + new Date().toLocaleString(), margin, 44);
+    doc.addImage(watermark , "PNG" , pageW/2 , pageH - 48 , 80 , 50);
+
+    y = 90;
+    doc.setTextColor(20,20,20);
+
+    function pageBreakCheck(neededH){
+      if (y + neededH > pageH - margin){ doc.addPage(); y = margin; doc.addImage(watermark , "PNG" , pageW/2 , pageH - 48 , 80 , 50); }
+    }
+    function sectionHeader(title){
+      pageBreakCheck(28);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(20,20,20);
+      doc.text(title, margin, y);
+      doc.setDrawColor(255,106,31);
+      doc.setLineWidth(1.2);
+      doc.line(margin, y + 4, pageW - margin, y + 4);
+      y += 20;
+    }
+
+    const colW = (pageW - margin*2 - 16) / 2;
+    const rowH = colW * 0.75;
+
+    const withPhotos = sections.filter(s => s.photos.length > 0);
+
+    for (const section of withPhotos){
+      const title = section.el.querySelector('.section-title-input').value.trim() || 'Untitled Section';
+      pageBreakCheck(28 + rowH + 26);
+      sectionHeader(title + ' (' + section.photos.length + ')');
+
+      let col = 0;
+      for (let i = 0; i < section.photos.length; i++){
+        const yBefore = y;
+        pageBreakCheck(rowH + 26);
+        if (y !== yBefore) col = 0;
+
+        const x = margin + col * (colW + 16);
+        try{
+          doc.addImage(section.photos[i].dataUrl, 'JPEG', x, y, colW, rowH, undefined, 'FAST');
+        }catch(e){
+          doc.addImage(section.photos[i].dataUrl, 'PNG', x, y, colW, rowH, undefined, 'FAST');
+        }
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(90,90,90);
+        const caption = section.photos[i].caption?.trim() || `Photo ${i+1}`;
+        const capLines = doc.splitTextToSize(caption, colW);
+        doc.text(capLines, x, y + rowH + 12);
+
+        if (col === 1){ col = 0; y += rowH + 26; } else { col = 1; }
+      }
+      if (col === 1){ y += rowH + 26; }
+      y += 10; // gap before next section
+    }
+
+    const filename = ticketId + '.pdf';
+    const blob = doc.output('blob');
+    lastPdfBlob = blob;
+    lastPdfName = filename;
+    return { blob, filename };
+  }
+
+  document.getElementById('generateBtn').addEventListener('click', async () => {
+    hideError();
+    const err = validate();
+    if (err){ showError(err); return; }
+
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    btn.textContent = 'Generating…';
+    try{
+      const { filename } = await generatePdf();
+      const totalPhotos = sections.reduce((sum, s) => sum + s.photos.length, 0);
+      document.getElementById('resultMeta').textContent = filename + '  ·  ' + totalPhotos + ' photo(s) embedded';
+      document.getElementById('formView').style.display = 'none';
+      document.getElementById('resultView').classList.add('show');
+    } catch(err){
+      showError('Something went wrong generating the PDF. Please try again.');
+      console.error(err);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Generate PDF report';
+    }
+  });
+
+  document.getElementById('editBtn').addEventListener('click', () => {
+    document.getElementById('resultView').classList.remove('show');
+    document.getElementById('formView').style.display = 'block';
+  });
+
+  document.getElementById('shareBtn').addEventListener('click', async () => {
+    if (!lastPdfBlob) return;
+    const file = new File([lastPdfBlob], lastPdfName, { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })){
+      try{
+        await navigator.share({ files: [file], title: 'Completion Report', text: 'Completion report — ' + ticketId });
+        return;
+      }catch(e){ /* fall through to download */ }
+    }
+    const url = URL.createObjectURL(lastPdfBlob);
+    const a = document.createElement('a');
+    a.href = url; a.download = lastPdfName;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  });
+  // document.getElementById('shareBtn').addEventListener('click', async () => {
+  //   if (!lastPdfBlob) return;
+  //   const file = new File([lastPdfBlob], lastPdfName, { type: 'application/pdf' });
+
+  //   if (navigator.canShare && navigator.canShare({ files: [file] })){
+  //     try{
+  //       await navigator.share({
+  //         files: [file],
+  //         title: 'Field Report ' + 'SAMPLE',
+  //         text: 'Site survey report — ' + (document.getElementById('projectName').value || '')
+  //       });
+  //       return;
+  //     }catch(e){
+  //       // user cancelled or share failed — fall through to download
+  //     }
+  //   }
+  //   const url = URL.createObjectURL(lastPdfBlob);
+  //   const a = document.createElement('a');
+  //   a.href = url;
+  //   a.download = lastPdfName;
+  //   document.body.appendChild(a);
+  //   a.click();
+  //   a.remove();
+  //   URL.revokeObjectURL(url);
+  // });
+
+  // ================= Install banner =================
+  const installBanner = document.getElementById('installBanner');
+  const installBtn = document.getElementById('installBtn');
+  const dismissInstall = document.getElementById('dismissInstall');
+  const iosModal = document.getElementById('iosModal');
+  const closeIosModal = document.getElementById('closeIosModal');
+
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+  const dismissed = sessionStorage.getItem('installDismissed') === '1';
+  let deferredPrompt = null;
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (!isStandalone && !dismissed) installBanner.classList.add('show');
+  });
+  if (isIos && !isStandalone && !dismissed) installBanner.classList.add('show');
+
+  installBtn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      installBanner.classList.remove('show');
+    } else {
+      iosModal.classList.add('show');
+    }
+  });
+  dismissInstall.addEventListener('click', () => {
+    installBanner.classList.remove('show');
+    sessionStorage.setItem('installDismissed', '1');
+  });
+  closeIosModal.addEventListener('click', () => iosModal.classList.remove('show'));
+  iosModal.addEventListener('click', (e) => { if (e.target === iosModal) iosModal.classList.remove('show'); });
+  window.addEventListener('appinstalled', () => installBanner.classList.remove('show'));
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+})();
+</script>
+</body>
+</html>
