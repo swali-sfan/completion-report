@@ -637,8 +637,6 @@
       doc.setTextColor(20,20,20);
       doc.text(title, margin, y);
       doc.setDrawColor(255,106,31);
-      doc.setLineWidth(1.2);
-      doc.line(margin, y + 4, pageW - margin, y + 4);
       y += 20;
     }
 
@@ -674,7 +672,6 @@
         if (col === 1){ col = 0; y += rowH + 26; } else { col = 1; }
       }
       if (col === 1){ y += rowH + 26; }
-      y += 10; // gap before next section
     }
 
     const filename = ticketId + '.pdf';
@@ -712,46 +709,46 @@
     document.getElementById('formView').style.display = 'block';
   });
 
-  document.getElementById('shareBtn').addEventListener('click', async () => {
-    if (!lastPdfBlob) return;
-    const file = new File([lastPdfBlob], lastPdfName, { type: 'application/pdf' });
-    if (navigator.canShare && navigator.canShare({ files: [file] })){
-      try{
-        await navigator.share({ files: [file], title: 'Completion Report', text: 'Completion report — ' + ticketId });
-        return;
-      }catch(e){ /* fall through to download */ }
-    }
-    const url = URL.createObjectURL(lastPdfBlob);
-    const a = document.createElement('a');
-    a.href = url; a.download = lastPdfName;
-    document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
-  });
   // document.getElementById('shareBtn').addEventListener('click', async () => {
   //   if (!lastPdfBlob) return;
   //   const file = new File([lastPdfBlob], lastPdfName, { type: 'application/pdf' });
-
   //   if (navigator.canShare && navigator.canShare({ files: [file] })){
   //     try{
-  //       await navigator.share({
-  //         files: [file],
-  //         title: 'Field Report ' + 'SAMPLE',
-  //         text: 'Site survey report — ' + (document.getElementById('projectName').value || '')
-  //       });
+  //       await navigator.share({ files: [file], title: 'Completion Report', text: 'Completion report — ' + ticketId });
   //       return;
-  //     }catch(e){
-  //       // user cancelled or share failed — fall through to download
-  //     }
+  //     }catch(e){ /* fall through to download */ }
   //   }
   //   const url = URL.createObjectURL(lastPdfBlob);
   //   const a = document.createElement('a');
-  //   a.href = url;
-  //   a.download = lastPdfName;
-  //   document.body.appendChild(a);
-  //   a.click();
-  //   a.remove();
+  //   a.href = url; a.download = lastPdfName;
+  //   document.body.appendChild(a); a.click(); a.remove();
   //   URL.revokeObjectURL(url);
   // });
+  document.getElementById('shareBtn').addEventListener('click', async () => {
+    if (!lastPdfBlob) return;
+    const file = new File([lastPdfBlob], lastPdfName, { type: 'application/pdf' });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })){
+      try{
+        await navigator.share({
+          files: [file],
+          title: 'Field Report ' + 'SAMPLE',
+          text: 'Site survey report — ' + (document.getElementById('projectName').value || '')
+        });
+        return;
+      }catch(e){
+        // user cancelled or share failed — fall through to download
+      }
+    }
+    const url = URL.createObjectURL(lastPdfBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = lastPdfName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
 
   // ================= Install banner =================
   const installBanner = document.getElementById('installBanner');
