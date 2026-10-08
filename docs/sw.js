@@ -1,5 +1,5 @@
 // Bump this when you change index.html/manifest so old caches get replaced.
-const CACHE_NAME = 'completion-report-v3';
+const CACHE_NAME = 'completion-report-v4';
 
 const APP_SHELL = [
   './',

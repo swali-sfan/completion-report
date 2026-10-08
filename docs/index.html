@@ -141,16 +141,18 @@
 
   /* ---------- Photo grid ---------- */
   .photo-grid{
-    display:grid;
-    grid-template-columns:repeat(2, 1fr);
-    gap:10px;
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:10px;
+  align-items:start;
   }
   .photo-tile{
-    position:relative;
-    border-radius:var(--radius);
-    background:var(--surface-raised);
-    border:1px solid var(--line);
-    padding:6px;
+  position:relative;
+  min-width:0;
+  border-radius:var(--radius);
+  background:var(--surface-raised);
+  border:1px solid var(--line);
+  padding:6px;
   }
   .photo-img-wrap{
     position:relative;
@@ -437,6 +439,156 @@
 
   // ================= Section + photo state =================
   // Each section: { id, el (DOM node), photos: [{ dataUrl, caption }] }
+  // const sections = [];
+  // let sectionCounter = 0;
+  // let activeSection = null; // which section's "+" was tapped, used by the shared photo modal
+
+  // const sectionsContainer = document.getElementById('sectionsContainer');
+  // const addSectionBtn = document.getElementById('addSectionBtn');
+
+  // const photoSourceModal = document.getElementById('photoSourceModal');
+  // const choosePhotoCamera = document.getElementById('choosePhotoCamera');
+  // const choosePhotoGallery = document.getElementById('choosePhotoGallery');
+  // const closePhotoSourceModal = document.getElementById('closePhotoSourceModal');
+  // const cameraInput = document.getElementById('cameraInput');
+  // const galleryInput = document.getElementById('galleryInput');
+
+  // function createSection(){
+  //   sectionCounter++;
+  //   const section = { id: 'sec-' + sectionCounter, el: null, photos: [] };
+
+  //   const wrap = document.createElement('div');
+  //   wrap.className = 'photo-section';
+  //   wrap.innerHTML = `
+  //     <div class="section-head">
+  //       <input type="text" class="section-title-input">
+  //       <button type="button" class="remove-section-btn" aria-label="Remove section">✕</button>
+  //     </div>
+  //     <div class="section-body">
+  //       <div class="photo-grid">
+  //         <button type="button" class="add-photo-btn">
+  //           <span class="plus">+</span>
+  //           <span>Add photo</span>
+  //         </button>
+  //       </div>
+  //     </div>
+  //   `;
+  //   section.el = wrap;
+  //   sections.push(section);
+  //   sectionsContainer.appendChild(wrap);
+
+  //   wrap.querySelector('.remove-section-btn').addEventListener('click', () => {
+  //     const idx = sections.indexOf(section);
+  //     if (idx > -1) sections.splice(idx, 1);
+  //     wrap.remove();
+  //   });
+
+  //   wrap.querySelector('.add-photo-btn').addEventListener('click', () => {
+  //     activeSection = section;
+  //     photoSourceModal.classList.add('show');
+  //   });
+
+  //   renderSectionPhotos(section);
+  //   return section;
+  // }
+
+  // addSectionBtn.addEventListener('click', () => createSection());
+
+  // // ---------- Shared photo source picker ----------
+  // closePhotoSourceModal.addEventListener('click', () => photoSourceModal.classList.remove('show'));
+  // photoSourceModal.addEventListener('click', (e) => {
+  //   if (e.target === photoSourceModal) photoSourceModal.classList.remove('show');
+  // });
+  // choosePhotoCamera.addEventListener('click', () => {
+  //   photoSourceModal.classList.remove('show');
+  //   cameraInput.click();
+  // });
+  // choosePhotoGallery.addEventListener('click', () => {
+  //   photoSourceModal.classList.remove('show');
+  //   galleryInput.click();
+  // });
+
+  // function handlePhotoFiles(fileList){
+  //   if (!activeSection) return;
+  //   const section = activeSection;
+  //   const files = Array.from(fileList || []);
+  //   files.forEach(file => {
+  //     const reader = new FileReader();
+  //     reader.onload = (ev) => {
+  //       section.photos.push({ dataUrl: ev.target.result, caption: '' });
+  //       renderSectionPhotos(section);
+  //     };
+  //     reader.readAsDataURL(file);
+  //   });
+  // }
+  // cameraInput.addEventListener('change', (e) => { handlePhotoFiles(e.target.files); cameraInput.value = ''; });
+  // galleryInput.addEventListener('change', (e) => { handlePhotoFiles(e.target.files); galleryInput.value = ''; });
+
+  // function renderSectionPhotos(section){
+  //   const grid = section.el.querySelector('.photo-grid');
+  //   const addBtn = section.el.querySelector('.add-photo-btn');
+
+  //   grid.querySelectorAll('.photo-tile').forEach(t => t.remove());
+  //   section.photos.forEach((p, i) => {
+  //     const tile = document.createElement('div');
+  //     tile.className = 'photo-tile';
+  //     tile.innerHTML = `
+  //       <div class="photo-img-wrap">
+  //         <img src="${p.dataUrl}" alt="Photo ${i+1}">
+  //         <div class="rm" data-i="${i}">✕</div>
+  //       </div>
+  //       <input type="text" class="photo-caption" data-i="${i}" placeholder="Describe this photo…" value="${p.caption || ''}">
+  //     `;
+  //     grid.insertBefore(tile, addBtn);
+  //   });
+
+  //   grid.querySelectorAll('.rm').forEach(btn => {
+  //     btn.addEventListener('click', () => {
+  //       section.photos.splice(Number(btn.dataset.i), 1);
+  //       renderSectionPhotos(section);
+  //     });
+  //   });
+  //   grid.querySelectorAll('.photo-caption').forEach(input => {
+  //     input.addEventListener('input', () => {
+  //       section.photos[Number(input.dataset.i)].caption = input.value;
+  //     });
+  //   });
+  // }
+
+  // // Start with one section so the form isn't empty on load.
+  // createSection();
+
+    // ================= Draft persistence (IndexedDB) =================
+  const DB_NAME = 'completion-report-db';
+  const STORE_NAME = 'drafts';
+  const DRAFT_KEY = 'current';
+
+  function openDB(){
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(STORE_NAME);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  function withStore(mode, fn){
+    return openDB().then(db => new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, mode);
+      const req = fn(tx.objectStore(STORE_NAME));
+      tx.oncomplete = () => { db.close(); resolve(req && req.result); };
+      tx.onerror = () => { db.close(); reject(tx.error); };
+      tx.onabort = () => { db.close(); reject(tx.error); };
+    }));
+  }
+  const dbSet = (v) => withStore('readwrite', s => s.put(v, DRAFT_KEY));
+  const dbGet = () => withStore('readonly', s => s.get(DRAFT_KEY));
+  const dbDelete = () => withStore('readwrite', s => s.delete(DRAFT_KEY));
+
+  // Ask the browser not to evict this data under storage pressure (best effort).
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+
+  // ================= Section + photo state =================
+  // Each section: { id, el (DOM node), photos: [{ dataUrl, caption }] }
   const sections = [];
   let sectionCounter = 0;
   let activeSection = null; // which section's "+" was tapped, used by the shared photo modal
@@ -451,9 +603,45 @@
   const cameraInput = document.getElementById('cameraInput');
   const galleryInput = document.getElementById('galleryInput');
 
-  function createSection(){
+  function snapshot(){
+    return sections.map(s => ({
+      title: s.el.querySelector('.section-title-input').value,
+      photos: s.photos.map(p => ({ dataUrl: p.dataUrl, caption: p.caption }))
+    }));
+  }
+
+  let saveTimer = null;
+  let warnedSaveFail = false;
+  function saveNow(){
+    clearTimeout(saveTimer);
+    const snap = snapshot();
+    const isEmpty = snap.every(s => !s.title.trim() && s.photos.length === 0);
+    const op = isEmpty ? dbDelete() : dbSet(snap);
+    op.catch(err => {
+      console.warn('Draft auto-save failed', err);
+      if (!warnedSaveFail){
+        warnedSaveFail = true;
+        showError('Could not auto-save your progress (device storage may be full). Generate the PDF soon so you don\'t lose work.');
+      }
+    });
+  }
+  function scheduleSave(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveNow, 600);
+  }
+  // Flush immediately if the user switches away or refreshes mid-debounce.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') saveNow();
+  });
+  window.addEventListener('pagehide', saveNow);
+
+  function createSection(initial){
     sectionCounter++;
-    const section = { id: 'sec-' + sectionCounter, el: null, photos: [] };
+    const section = {
+      id: 'sec-' + sectionCounter,
+      el: null,
+      photos: initial ? initial.photos.map(p => ({ dataUrl: p.dataUrl, caption: p.caption || '' })) : []
+    };
 
     const wrap = document.createElement('div');
     wrap.className = 'photo-section';
@@ -475,10 +663,15 @@
     sections.push(section);
     sectionsContainer.appendChild(wrap);
 
+    const titleInput = wrap.querySelector('.section-title-input');
+    if (initial) titleInput.value = initial.title || '';
+    titleInput.addEventListener('input', scheduleSave);
+
     wrap.querySelector('.remove-section-btn').addEventListener('click', () => {
       const idx = sections.indexOf(section);
       if (idx > -1) sections.splice(idx, 1);
       wrap.remove();
+      scheduleSave();
     });
 
     wrap.querySelector('.add-photo-btn').addEventListener('click', () => {
@@ -490,7 +683,7 @@
     return section;
   }
 
-  addSectionBtn.addEventListener('click', () => createSection());
+  addSectionBtn.addEventListener('click', () => { createSection(); scheduleSave(); });
 
   // ---------- Shared photo source picker ----------
   closePhotoSourceModal.addEventListener('click', () => photoSourceModal.classList.remove('show'));
@@ -506,18 +699,43 @@
     galleryInput.click();
   });
 
-  function handlePhotoFiles(fileList){
-    if (!activeSection) return;
-    const section = activeSection;
-    const files = Array.from(fileList || []);
-    files.forEach(file => {
+  // Shrinks camera photos before storing them. Keeps the draft small enough to
+  // save quickly and keeps the PDF light.
+  function resizeImage(file, maxDim = 1600, quality = 0.72){
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = (ev) => {
-        section.photos.push({ dataUrl: ev.target.result, caption: '' });
-        renderSectionPhotos(section);
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > height && width > maxDim){ height = height * (maxDim / width); width = maxDim; }
+          else if (height > maxDim){ width = width * (maxDim / height); height = maxDim; }
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = () => reject(new Error('Could not decode image'));
+        img.src = e.target.result;
       };
+      reader.onerror = () => reject(new Error('Could not read file'));
       reader.readAsDataURL(file);
     });
+  }
+
+  async function handlePhotoFiles(fileList){
+    if (!activeSection) return;
+    const section = activeSection;
+    for (const file of Array.from(fileList || [])){
+      try{
+        const dataUrl = await resizeImage(file);
+        section.photos.push({ dataUrl, caption: '' });
+        renderSectionPhotos(section);
+        scheduleSave();
+      }catch(e){
+        console.error('Could not process photo:', e);
+      }
+    }
   }
   cameraInput.addEventListener('change', (e) => { handlePhotoFiles(e.target.files); cameraInput.value = ''; });
   galleryInput.addEventListener('change', (e) => { handlePhotoFiles(e.target.files); galleryInput.value = ''; });
@@ -532,29 +750,56 @@
       tile.className = 'photo-tile';
       tile.innerHTML = `
         <div class="photo-img-wrap">
-          <img src="${p.dataUrl}" alt="Photo ${i+1}">
-          <div class="rm" data-i="${i}">✕</div>
+          <img alt="Photo ${i+1}">
+          <div class="rm">✕</div>
         </div>
-        <input type="text" class="photo-caption" data-i="${i}" placeholder="Describe this photo…" value="${p.caption || ''}">
+        <input type="text" class="photo-caption" placeholder="Describe this photo…">
       `;
-      grid.insertBefore(tile, addBtn);
-    });
+      tile.querySelector('img').src = p.dataUrl;
 
-    grid.querySelectorAll('.rm').forEach(btn => {
-      btn.addEventListener('click', () => {
-        section.photos.splice(Number(btn.dataset.i), 1);
+      // Set via .value (not an HTML attribute) so captions containing quotes restore correctly.
+      const cap = tile.querySelector('.photo-caption');
+      cap.value = p.caption || '';
+      cap.addEventListener('input', () => { p.caption = cap.value; scheduleSave(); });
+
+      tile.querySelector('.rm').addEventListener('click', () => {
+        const idx = section.photos.indexOf(p);
+        if (idx > -1) section.photos.splice(idx, 1);
         renderSectionPhotos(section);
+        scheduleSave();
       });
-    });
-    grid.querySelectorAll('.photo-caption').forEach(input => {
-      input.addEventListener('input', () => {
-        section.photos[Number(input.dataset.i)].caption = input.value;
-      });
+
+      grid.insertBefore(tile, addBtn);
     });
   }
 
-  // Start with one section so the form isn't empty on load.
-  createSection();
+  function resetForm(){
+    sections.length = 0;
+    sectionsContainer.innerHTML = '';
+    activeSection = null;
+    createSection();
+  }
+
+  // After a successful share/download: wipe the saved draft and start fresh.
+  async function finishAndClearDraft(){
+    clearTimeout(saveTimer);
+    try{ await dbDelete(); }catch(e){ console.warn('Could not clear draft', e); }
+    resetForm();
+  }
+
+  // Restore the saved draft (if any) on load; otherwise start with one blank section.
+  (async function restoreDraft(){
+    try{
+      const saved = await dbGet();
+      if (saved && saved.length){
+        saved.forEach(d => createSection(d));
+        return;
+      }
+    }catch(e){
+      console.warn('Could not restore draft', e);
+    }
+    createSection();
+  })();
 
   // ================= Validation =================
   function showError(msg){
@@ -611,6 +856,7 @@
     const margin = 48;
     let y = margin;
     const watermark = await loadImage('watermark.png')
+    const duImage = await loadImage('du_icon.png')
     // ---------- Header bar ----------
     doc.setFillColor(18,23,26);
     doc.rect(0, 0, pageW, 60, 'F');
@@ -725,7 +971,33 @@
   //   document.body.appendChild(a); a.click(); a.remove();
   //   URL.revokeObjectURL(url);
   // });
-  document.getElementById('shareBtn').addEventListener('click', async () => {
+  // document.getElementById('shareBtn').addEventListener('click', async () => {
+  //   if (!lastPdfBlob) return;
+  //   const file = new File([lastPdfBlob], lastPdfName, { type: 'application/pdf' });
+
+  //   if (navigator.canShare && navigator.canShare({ files: [file] })){
+  //     try{
+  //       await navigator.share({
+  //         files: [file],
+  //         title: 'Field Report ' + 'SAMPLE',
+  //         text: 'Site survey report — ' + (document.getElementById('projectName').value || '')
+  //       });
+  //       return;
+  //     }catch(e){
+  //       // user cancelled or share failed — fall through to download
+  //     }
+  //   }
+  //   const url = URL.createObjectURL(lastPdfBlob);
+  //   const a = document.createElement('a');
+  //   a.href = url;
+  //   a.download = lastPdfName;
+  //   document.body.appendChild(a);
+  //   a.click();
+  //   a.remove();
+  //   URL.revokeObjectURL(url);
+  // });
+
+    document.getElementById('shareBtn').addEventListener('click', async () => {
     if (!lastPdfBlob) return;
     const file = new File([lastPdfBlob], lastPdfName, { type: 'application/pdf' });
 
@@ -733,14 +1005,17 @@
       try{
         await navigator.share({
           files: [file],
-          title: 'Field Report ' + 'SAMPLE',
-          text: 'Site survey report — ' + (document.getElementById('projectName').value || '')
+          title: 'Completion Report',
+          text: 'Completion report — ' + ticketId
         });
+        await finishAndClearDraft();   // shared successfully → clear the draft
         return;
       }catch(e){
-        // user cancelled or share failed — fall through to download
+        if (e.name === 'AbortError') return; // user closed the share sheet → keep the draft
+        // any other failure → fall through to download
       }
     }
+
     const url = URL.createObjectURL(lastPdfBlob);
     const a = document.createElement('a');
     a.href = url;
@@ -749,6 +1024,7 @@
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+    await finishAndClearDraft();       // downloaded → clear the draft
   });
 
   // ================= Install banner =================
